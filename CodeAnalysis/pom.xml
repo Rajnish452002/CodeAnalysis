@@ -15,6 +15,8 @@
     <description>Code Impact Analyzer for Spring Boot Applications</description>
     <properties>
         <java.version>17</java.version>
+        <!-- Define main class property -->
+        <start-class>com.example.CodeAnalysis.CodeAnalysisApplication</start-class>
     </properties>
 
     <dependencies>
@@ -69,7 +71,7 @@
             <version>5.2.4</version>
         </dependency>
 
-        <!-- CRITICAL FIX: Update Commons IO to version 2.15.1 -->
+        <!-- Commons IO (Fixed version) -->
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
@@ -114,6 +116,13 @@
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
             <optional>true</optional>
         </dependency>
+
+        <!-- Swagger/OpenAPI 3 Documentation -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.6.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -137,7 +146,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.example.CodeAnalysis.CodeAnalysisApplication</mainClass>
+                    <mainClass>${start-class}</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
@@ -147,28 +156,67 @@
                 </configuration>
             </plugin>
 
-            <!-- Maven Shade Plugin for creating fat JAR -->
+            <!-- CORRECTED: Maven Shade Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>3.4.1</version>
                 <executions>
                     <execution>
+                        <id>shade</id>
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
                         <configuration>
                             <finalName>code-impact-analyzer</finalName>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                             <transformers>
+                                <!-- Main Class Transformer -->
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.example.CodeAnalysis.CodeAnalysisApplication</mainClass>
+                                    <mainClass>${start-class}</mainClass>
                                 </transformer>
+
+                                <!-- Spring Handlers -->
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                     <resource>META-INF/spring.handlers</resource>
                                 </transformer>
+
+                                <!-- Spring Schemas -->
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                     <resource>META-INF/spring.schemas</resource>
+                                </transformer>
+
+                                <!-- Spring Factories -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/spring.factories</resource>
+                                </transformer>
+
+                                <!-- Services Transformer -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+
+                                <!-- Spring Configuration Metadata -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/spring-configuration-metadata.json</resource>
+                                </transformer>
+
+                                <!-- Additional Spring Boot Resources -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</resource>
+                                </transformer>
+
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/spring/org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration.imports</resource>
                                 </transformer>
                             </transformers>
                         </configuration>
